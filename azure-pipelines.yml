@@ -1,0 +1,33 @@
+trigger:
+- master
+          
+stages:
+- stage: Validate
+  jobs:
+  - job: Validate
+    continueOnError: false
+    pool:
+      name: jay
+    steps:  
+    - task: Bash@3
+      inputs:
+        targetType: 'inline'
+        script: |
+          wget https://releases.hashicorp.com/terraform/0.15.5/terraform_0.15.5_linux_amd64.zip
+          unzip terraform_0.15.5_linux_amd64.zip
+          sudo mv terraform /usr/local/bin/
+          terraform --version
+      displayName: 'Install Terraform'
+      continueOnError: false
+      timeoutInMinutes: 10
+
+    - script: |
+        terraform init \
+          -backend-config="resource_group_name=$(resourceGroup)" \
+          -backend-config="storage_account_name=$(storageAccount)" \
+          -backend-config="container_name=$(container)" \
+          -backend-config="key=$(tfstateFile)" \
+          -backend-config="subscription_id=$(subscription)"
+      displayName: 'Terraform Init'
+      workingDirectory: '$(System.DefaultWorkingDirectory)'
+
